@@ -1,0 +1,53 @@
+{% load static %}
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}YouOnlyTalkOnce{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core/css/app.css' %}">
+    {% block extra_head %}{% endblock %}
+    <script defer src="{% static 'core/js/api-client.js' %}"></script>
+    <script defer src="{% static 'core/js/base.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+  </head>
+  <body>
+    <header class="app-header" aria-label="서비스 상단">
+      <a href="/" class="brand-link">YouOnlyTalkOnce</a>
+      {% if request.user.is_authenticated %}
+      <nav class="main-nav" aria-label="주요 메뉴">
+        {% if nav_is_admin %}
+        <a href="/admin">관리자</a>
+        {% endif %}
+        {% if nav_is_parent %}
+        <a href="/parent">부모 대시보드</a>
+        {% endif %}
+        {% if nav_is_child %}
+        <a href="/child/chat">자녀 채팅</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+      <div class="header-user">
+        {% if request.user.is_authenticated %}
+          <span class="user-label">{{ request.user.username }}</span>
+          <form action="/logout" method="post" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-link">로그아웃</button>
+          </form>
+        {% endif %}
+      </div>
+    </header>
+
+    <main id="main-content" class="main-shell">
+      {% if messages %}
+      <section class="flash-stack" aria-label="알림">
+        {% for message in messages %}
+        <p class="flash flash-{{ message.tags|default:'info' }}">{{ message }}</p>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

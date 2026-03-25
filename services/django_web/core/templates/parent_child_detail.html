@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ child.username }} 상세 | YouOnlyTalkOnce{% endblock %}
+{% block extra_scripts %}
+<script defer src="{% static 'core/js/parent-child-detail.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head" aria-labelledby="detail-title">
+  <h1 id="detail-title">{{ child.username }} 상세 관리</h1>
+  <p class="muted">프로필, 할 일, 키워드, 최근 채팅을 한 화면에서 관리합니다.</p>
+</section>
+
+<section class="detail-layout" data-parent-child-detail data-child-id="{{ child.id }}" data-done-dates="{{ todo_done_dates|join:',' }}">
+  <article class="panel">
+    <h2>자녀 프로필</h2>
+    <dl class="profile-grid">
+      <div>
+        <dt>학년</dt>
+        <dd>{{ profile.grade|default:"-" }}</dd>
+      </div>
+      <div>
+        <dt>관심사</dt>
+        <dd>{{ profile.interests|default:"-" }}</dd>
+      </div>
+      <div>
+        <dt>가이드</dt>
+        <dd>{{ profile.guidance|default:"-" }}</dd>
+      </div>
+    </dl>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>할 일 목록</h2>
+      <button type="button" class="btn btn-primary" id="todo-open-btn">할 일 추가</button>
+    </div>
+
+    <ul class="todo-list" id="todo-list" aria-label="할 일 목록">
+      {% for todo in todos %}
+      <li class="todo-item" data-todo-id="{{ todo.id }}" data-status="{{ todo.status }}" data-done-date="{% if todo.done_at %}{{ todo.done_at|date:'Y-m-d' }}{% endif %}">
+        <div class="todo-main">
+          <p class="todo-title">{{ todo.title }}</p>
+          <p class="muted">우선순위 P{{ todo.priority }}{% if todo.due_date %} · 기한 {{ todo.due_date|date:"Y-m-d" }}{% endif %}</p>
+        </div>
+        <div class="todo-actions" role="group" aria-label="상태 변경">
+          <button type="button" class="btn btn-chip {% if todo.status == 'todo' %}active{% endif %}" data-status-btn data-next-status="todo">대기</button>
+          <button type="button" class="btn btn-chip {% if todo.status == 'doing' %}active{% endif %}" data-status-btn data-next-status="doing">진행</button>
+          <button type="button" class="btn btn-chip {% if todo.status == 'done' %}active{% endif %}" data-status-btn data-next-status="done">완료</button>
+        </div>
+      </li>
+      {% empty %}
+      <li class="muted" id="todo-empty">등록된 할 일이 없습니다.</li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>키워드 워드클라우드</h2>
+      <div class="inline-row">
+        <label for="keyword-days">기간</label>
+        <select id="keyword-days">
+          <option value="7" selected>7일</option>
+          <option value="14">14일</option>
+          <option value="30">30일</option>
+        </select>
+        <button type="button" class="btn btn-ghost" id="keyword-refresh-btn">갱신</button>
+      </div>
+    </div>
+    <div id="keyword-cloud" class="tag-cloud" aria-live="polite">
+      {% for item in cloud %}
+      <span class="tag-chip polarity-{{ item.polarity }} {% if item.weight >= 0.8 %}w5{% elif item.weight >= 0.6 %}w4{% elif item.weight >= 0.4 %}w3{% elif item.weight >= 0.2 %}w2{% else %}w1{% endif %}">{{ item.term }}</span>
+      {% empty %}
+      <p class="muted" id="keyword-empty">아직 분석 데이터가 없습니다.</p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2>완료 달력</h2>
+    <div id="todo-done-calendar" class="todo-calendar" aria-live="polite"></div>
+    <ul id="todo-done-date-list" class="calendar-check-list" aria-label="완료 날짜 목록">
+      {% for done_date in todo_done_dates %}
+      <li><time datetime="{{ done_date }}">{{ done_date }}</time></li>
+      {% empty %}
+      <li class="muted">완료 처리된 날짜가 아직 없습니다.</li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="panel" aria-labelledby="message-title">
+  <div class="panel-head">
+    <h2 id="message-title">최근 채팅</h2>
+    <form method="get" class="inline-row" aria-label="채팅 날짜 필터">
+      <label for="chat-date">날짜</label>
+      <input id="chat-date" name="chat_date" type="date" value="{{ selected_chat_date }}">
+      <button type="submit" class="btn btn-ghost">조회</button>
+      {% if selected_chat_date %}
+      <a href="/parent/child/{{ child.id }}" class="btn btn-ghost">초기화</a>
+      {% endif %}
+    </form>
+  </div>
+  <div class="inline-row date-chip-row" aria-label="최근 채팅 날짜">
+    {% for day in available_chat_dates %}
+    <a class="btn btn-chip {% if selected_chat_date == day %}active{% endif %}" href="/parent/child/{{ child.id }}?chat_date={{ day }}">{{ day }}</a>
+    {% empty %}
+    <span class="muted">날짜 데이터가 없습니다.</span>
+    {% endfor %}
+  </div>
+  <ul class="chat-log" aria-label="최근 채팅 기록">
+    {% for message in chat_messages %}
+    <li class="chat-row chat-{{ message.role }}">
+      <p class="chat-meta">
+        <span class="chip chip-{{ message.role }}">{{ message.role }}</span>
+        <time datetime="{{ message.created_at|date:'c' }}">{{ message.created_at|date:"Y-m-d H:i" }}</time>
+      </p>
+      <p class="chat-content">{{ message.content }}</p>
+    </li>
+    {% empty %}
+    <li class="muted">채팅 기록이 없습니다.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% include "components/todo_modal.html" %}
+{% endblock %}

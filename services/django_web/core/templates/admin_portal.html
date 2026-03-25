@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}관리자 포털 | YouOnlyTalkOnce{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{% static 'core/js/admin-portal.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head" aria-labelledby="admin-title">
+  <h1 id="admin-title">관리자 포털</h1>
+  <p class="muted">기존 관리자 기능(알림/설정/계정/서약/RAG/내보내기)을 자녀관리 도메인으로 복원했습니다.</p>
+</section>
+
+<section class="kpi-grid" aria-label="핵심 지표">
+  <article class="panel kpi-card">
+    <h2>전체 사용자</h2>
+    <p class="kpi-value">{{ total_users }}</p>
+  </article>
+  <article class="panel kpi-card">
+    <h2>등록 자녀</h2>
+    <p class="kpi-value">{{ total_children }}</p>
+  </article>
+  <article class="panel kpi-card">
+    <h2>전체 할 일</h2>
+    <p class="kpi-value">{{ total_todos }}</p>
+  </article>
+  <article class="panel kpi-card">
+    <h2>완료 할 일</h2>
+    <p class="kpi-value">{{ done_todos }}</p>
+  </article>
+</section>
+
+<section class="admin-layout" aria-label="관리자 작업">
+  <div class="admin-panel-stack">
+    <section class="panel" aria-labelledby="admin-alert-title">
+      <h2 id="admin-alert-title" class="section-title">관리 알림</h2>
+      {% if alerts %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">자녀</th>
+              <th scope="col">시각</th>
+              <th scope="col">사유</th>
+              <th scope="col">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alert in alerts %}
+            <tr>
+              <td>{{ alert.child.username }}</td>
+              <td>{{ alert.created_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ alert.reason }}</td>
+              <td>
+                <form class="inline-form" action="/admin/alerts/{{ alert.id }}/resolve" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-secondary">확인</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">열린 알림이 없습니다.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="admin-account-title">
+      <h2 id="admin-account-title" class="section-title">계정 관리</h2>
+
+      <h3 class="subsection-title">부모 계정 생성</h3>
+      <form class="stack-form" action="/admin/users/parent" method="post">
+        {% csrf_token %}
+        <div class="field-row two-col">
+          <div>
+            <label for="parent-username">아이디</label>
+            <input id="parent-username" name="username" required>
+          </div>
+          <div>
+            <label for="parent-password">비밀번호</label>
+            <input id="parent-password" name="password" type="password" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">부모 계정 생성</button>
+      </form>
+
+      <hr>
+
+      <h3 class="subsection-title">자녀 계정 생성</h3>
+      <form class="stack-form" action="/admin/users/child" method="post">
+        {% csrf_token %}
+        <div class="field-row two-col">
+          <div>
+            <label for="child-username">아이디</label>
+            <input id="child-username" name="username" required>
+          </div>
+          <div>
+            <label for="child-password">비밀번호</label>
+            <input id="child-password" name="password" type="password" required>
+          </div>
+        </div>
+        <div class="field-row two-col">
+          <div>
+            <label for="child-grade">학년</label>
+            <input id="child-grade" name="grade" placeholder="초5">
+          </div>
+          <div>
+            <label for="child-parent">연결 부모</label>
+            <select id="child-parent" name="parent_id">
+              <option value="">선택 안 함</option>
+              {% for user in users %}
+                {% if user.role == "parent" %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <label for="child-interests">관심사 (쉼표 구분)</label>
+          <input id="child-interests" name="interests" placeholder="축구, 과학, 독서">
+        </div>
+        <div class="field-row">
+          <label for="child-guidance">가이드</label>
+          <textarea id="child-guidance" name="guidance" rows="3" placeholder="학습 시작 전에 할 일 우선순위를 점검"></textarea>
+        </div>
+        <div class="inline-row">
+          <input id="child-consent" name="consent_given" type="checkbox" checked>
+          <label for="child-consent">AI 사용 동의 활성화</label>
+        </div>
+        <button type="submit" class="btn btn-primary">자녀 계정 생성</button>
+      </form>
+
+      <hr>
+
+      <h3 class="subsection-title">계정 목록</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">아이디</th>
+              <th scope="col">역할</th>
+              <th scope="col">가입일</th>
+              <th scope="col">보기</th>
+              <th scope="col">삭제</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.role }}</td>
+              <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+              <td>
+                {% if user.role != "admin" %}
+                <a href="/admin/user/{{ user.id }}">상세</a>
+                {% else %}
+                <span class="muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not user.is_admin %}
+                <form class="inline-form" action="/admin/users/{{ user.id }}/delete" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-secondary">삭제</button>
+                </form>
+                {% else %}
+                <span class="muted">보호</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="admin-panel-stack">
+    <section class="panel" aria-labelledby="admin-ai-title">
+      <h2 id="admin-ai-title" class="section-title">AI 설정</h2>
+      <p class="muted">저장 즉시 다음 요청부터 반영됩니다. API 키는 마스킹되어 표시됩니다.</p>
+
+      <form class="stack-form" action="/admin/config/openai" method="post">
+        {% csrf_token %}
+        <div class="field-row two-col">
+          <div>
+            <label for="llm-provider">LLM 공급자</label>
+            <select id="llm-provider" name="llm_provider">
+              <option value="rule" {% if ai_config.llm_provider == "rule" %}selected{% endif %}>Rule(Fallback)</option>
+              <option value="openai" {% if ai_config.llm_provider == "openai" %}selected{% endif %}>OpenAI</option>
+              <option value="openai_compatible" {% if ai_config.llm_provider == "openai_compatible" %}selected{% endif %}>OpenAI-Compatible</option>
+              <option value="ollama" {% if ai_config.llm_provider == "ollama" %}selected{% endif %}>Ollama(Local)</option>
+            </select>
+          </div>
+          <div>
+            <label for="llm-base-url">LLM Base URL (선택)</label>
+            <input id="llm-base-url" name="llm_base_url" value="{{ ai_config.llm_base_url }}" placeholder="http://localhost:11434 또는 http://host:8000/v1">
+          </div>
+        </div>
+        <div class="field-row">
+          <label for="openai-model-select">GPT 모델</label>
+          <select id="openai-model-select" name="openai_model" data-current-model="{{ ai_config.openai_model }}" required>
+            <option value="{{ ai_config.openai_model }}">{{ ai_config.openai_model }} (현재)</option>
+          </select>
+          <p id="openai-model-status" class="code-help">모델 목록 불러오는 중...</p>
+        </div>
+        <div class="field-row">
+          <label>현재 API 키</label>
+          <input value="{{ ai_config.openai_api_key_masked }}" readonly>
+        </div>
+        <div class="field-row">
+          <label for="openai-api-key">새 API 키 (비우면 유지)</label>
+          <input id="openai-api-key" name="openai_api_key" type="password" autocomplete="new-password" placeholder="sk-...">
+        </div>
+        <button class="btn btn-primary" type="submit">OpenAI 설정 저장</button>
+      </form>
+
+      <hr>
+
+      <form class="stack-form" action="/admin/config/prompts" method="post">
+        {% csrf_token %}
+        <div class="field-row">
+          <label for="system-prompt">관리자 시스템 프롬프트</label>
+          <textarea id="system-prompt" name="system_prompt" rows="4" required>{{ ai_config.system_prompt }}</textarea>
+        </div>
+        <div class="field-row">
+          <label for="user-prompt-template">관리자 유저 프롬프트 템플릿</label>
+          <textarea id="user-prompt-template" name="user_prompt_template" rows="5" required>{{ ai_config.user_prompt_template }}</textarea>
+        </div>
+        <div class="field-row">
+          <label for="child-system-prompt">자녀 시스템 프롬프트</label>
+          <textarea id="child-system-prompt" name="child_system_prompt" rows="4" required>{{ ai_config.child_system_prompt }}</textarea>
+        </div>
+        <div class="field-row">
+          <label for="child-user-prompt-template">자녀 유저 프롬프트 템플릿</label>
+          <textarea id="child-user-prompt-template" name="child_user_prompt_template" rows="5" required>{{ ai_config.child_user_prompt_template }}</textarea>
+        </div>
+        <p class="code-help">필수 토큰: <code>{user_text}</code>, <code>{child_guidance}</code></p>
+        <button class="btn btn-primary" type="submit">프롬프트 저장</button>
+      </form>
+      <p class="muted">마지막 수정: {{ ai_config.last_updated_at }} / {{ ai_config.last_updated_by }}</p>
+    </section>
+
+    <section class="panel" aria-labelledby="admin-quick-title">
+      <h2 id="admin-quick-title" class="section-title">빠른 작업</h2>
+      <div class="admin-actions">
+        <a class="btn btn-ghost" href="/admin/consents">서약서 관리</a>
+        <a class="btn btn-ghost" href="/admin/rag/index">문서 색인 현황</a>
+        <a class="btn btn-ghost" href="/rag/reindex">문서 재색인</a>
+        <a class="btn btn-ghost" href="/export/csv?scope=messages">CSV(대화)</a>
+        <a class="btn btn-ghost" href="/export/csv?scope=metrics">CSV(대화+주제)</a>
+      </div>
+    </section>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="chat-log-title">
+  <div class="panel-head">
+    <h2 id="chat-log-title">최근 대화 로그</h2>
+    <div class="segmented" role="group" aria-label="로그 보기 전환">
+      <button type="button" class="btn btn-ghost active" data-view-toggle="chat-list" data-target="list-view">리스트</button>
+      <button type="button" class="btn btn-ghost" data-view-toggle="chat-list" data-target="table-view">테이블</button>
+    </div>
+  </div>
+
+  <div id="list-view" data-view-panel="chat-list" class="log-list-view">
+    <ul class="chat-log-list">
+      {% for row in recent_messages %}
+      <li>
+        <span class="chip chip-{{ row.role }}">{{ row.role }}</span>
+        <strong>{{ row.child.username }}</strong>
+        <span>{{ row.content }}</span>
+        <time datetime="{{ row.created_at|date:'c' }}">{{ row.created_at|date:"Y-m-d H:i" }}</time>
+      </li>
+      {% empty %}
+      <li class="muted">대화 기록이 없습니다.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div id="table-view" data-view-panel="chat-list" class="table-wrap is-hidden">
+    <table>
+      <caption class="sr-only">최근 대화 로그</caption>
+      <thead>
+        <tr>
+          <th scope="col">시간</th>
+          <th scope="col">자녀</th>
+          <th scope="col">역할</th>
+          <th scope="col">내용</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_messages %}
+        <tr>
+          <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ row.child.username }}</td>
+          <td>{{ row.role }}</td>
+          <td>{{ row.content }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="muted">대화 기록이 없습니다.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

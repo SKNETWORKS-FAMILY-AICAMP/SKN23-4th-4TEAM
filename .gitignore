@@ -1,32 +1,38 @@
+# Timestamp: 2026-03-25 14:38:42
+# Environment / secrets
 .env
 .env.*
 !.env.example
 
+# Python
 .venv/
 __pycache__/
 *.py[cod]
-*.so
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
 .coverage
 .coverage.*
 htmlcov/
 
-.DS_Store
-.idea/
-.vscode/
-
+# Local runtime data
 data/*.db
 data/*.db-*
 data/*.sqlite
 data/*.sqlite3
-data/app.log
-
+data/*.sqlite3-*
+*.sqlite-wal
+*.sqlite-shm
+staticfiles/
 data/rag_sources/
 
-**/*.md
-!README.md
+# Local-only files
+feedback.md
+glossary_KR.md
+aticle/
 
-docs/
-tests/
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Docker local override
+docker-compose.override.yml

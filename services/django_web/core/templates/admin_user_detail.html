@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}계정 상세 | YouOnlyTalkOnce{% endblock %}
+
+{% block content %}
+<section class="page-head" aria-labelledby="admin-user-title">
+  <h1 id="admin-user-title">{{ target.username }} 상세</h1>
+  <p class="muted">역할: {{ target_role }}</p>
+</section>
+
+<section class="admin-user-layout">
+  <article class="panel">
+    <h2 class="section-title">기본 정보</h2>
+    <dl class="profile-grid">
+      <div>
+        <dt>아이디</dt>
+        <dd>{{ target.username }}</dd>
+      </div>
+      <div>
+        <dt>가입일</dt>
+        <dd>{{ target.date_joined|date:"Y-m-d H:i" }}</dd>
+      </div>
+      <div>
+        <dt>마지막 로그인</dt>
+        <dd>{{ target.last_login|date:"Y-m-d H:i"|default:"-" }}</dd>
+      </div>
+    </dl>
+  </article>
+
+  {% if target_role == "child" %}
+  <article class="panel">
+    <h2 class="section-title">자녀 프로필</h2>
+    {% if child_profile %}
+    <dl class="profile-grid">
+      <div>
+        <dt>학년</dt>
+        <dd>{{ child_profile.grade|default:"-" }}</dd>
+      </div>
+      <div>
+        <dt>관심사</dt>
+        <dd>{{ child_profile.interests|default:"-" }}</dd>
+      </div>
+      <div>
+        <dt>가이드</dt>
+        <dd>{{ child_profile.guidance|default:"-" }}</dd>
+      </div>
+    </dl>
+    {% else %}
+    <p class="muted">등록된 프로필이 없습니다.</p>
+    {% endif %}
+
+    <h3 class="subsection-title">연결된 부모</h3>
+    <div class="badge-row">
+      {% for link in parent_links %}
+      <span class="badge-pill">{{ link.parent.username }}</span>
+      {% empty %}
+      <span class="muted">연결된 부모가 없습니다.</span>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2 class="section-title">할 일 목록</h2>
+    <ul class="todo-list">
+      {% for todo in child_todos %}
+      <li class="todo-item">
+        <div class="todo-main">
+          <p class="todo-title">{{ todo.title }}</p>
+          <p class="muted">상태 {{ todo.status }} · 우선순위 {{ todo.priority }}{% if todo.due_date %} · 기한 {{ todo.due_date }}{% endif %}</p>
+        </div>
+      </li>
+      {% empty %}
+      <li class="muted">등록된 할 일이 없습니다.</li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <article class="panel">
+    <h2 class="section-title">키워드 클라우드(30일)</h2>
+    <div class="tag-cloud">
+      {% for item in child_cloud %}
+      <span class="tag-chip w3 polarity-{{ item.polarity }}">{{ item.term }}</span>
+      {% empty %}
+      <span class="muted">키워드 데이터가 없습니다.</span>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2 class="section-title">채팅 로그</h2>
+    <div class="chat-log-box">
+      {% for row in child_messages %}
+      <article class="chat-row chat-{{ row.role }}">
+        <p class="chat-meta">
+          <span>{{ row.role }}</span>
+          <time datetime="{{ row.created_at|date:'c' }}">{{ row.created_at|date:"Y-m-d H:i" }}</time>
+        </p>
+        <p class="chat-content">{{ row.content }}</p>
+      </article>
+      {% empty %}
+      <p class="muted">대화 기록이 없습니다.</p>
+      {% endfor %}
+    </div>
+  </article>
+  {% elif target_role == "parent" %}
+  <article class="panel">
+    <h2 class="section-title">관리 중인 자녀</h2>
+    <div class="badge-row">
+      {% for link in managed_children %}
+      <a class="badge-pill" href="/admin/user/{{ link.child.id }}">{{ link.child.username }}</a>
+      {% empty %}
+      <span class="muted">연결된 자녀가 없습니다.</span>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+
+  <article class="panel">
+    <a class="btn btn-ghost" href="/admin">관리자 홈으로</a>
+  </article>
+</section>
+{% endblock %}

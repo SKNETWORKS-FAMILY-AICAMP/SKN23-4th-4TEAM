@@ -1,0 +1,33 @@
+<div class="modal is-hidden" id="todo-modal" role="dialog" aria-modal="true" aria-labelledby="todo-modal-title">
+  <div class="modal-backdrop" data-modal-close="todo-modal"></div>
+  <div class="modal-content">
+    <header class="modal-head">
+      <h3 id="todo-modal-title">할 일 추가</h3>
+      <button type="button" class="btn btn-ghost" data-modal-close="todo-modal" aria-label="닫기">닫기</button>
+    </header>
+    <form id="todo-create-form" class="stack-form">
+      <div class="field-row">
+        <label for="todo-title">할 일 제목</label>
+        <input id="todo-title" name="title" type="text" maxlength="255" required>
+      </div>
+      <div class="field-row two-col">
+        <div>
+          <label for="todo-priority">우선순위</label>
+          <select id="todo-priority" name="priority" required>
+            <option value="1">1 (가장 높음)</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5 (가장 낮음)</option>
+          </select>
+        </div>
+        <div>
+          <label for="todo-due-date">기한</label>
+          <input id="todo-due-date" name="due_date" type="date">
+        </div>
+      </div>
+      <p id="todo-modal-error" class="error-banner is-hidden" role="alert"></p>
+      <button type="submit" class="btn btn-primary" data-submit-label="저장">저장</button>
+    </form>
+  </div>
+</div>

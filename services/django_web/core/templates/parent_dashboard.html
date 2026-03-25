@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}부모 대시보드 | YouOnlyTalkOnce{% endblock %}
+
+{% block content %}
+<section class="page-head" aria-labelledby="parent-title">
+  <h1 id="parent-title">부모 대시보드</h1>
+  <p class="muted">자녀별 진행률과 최근 활동을 한 번에 확인합니다.</p>
+</section>
+
+<section class="panel" aria-labelledby="parent-add-child-title">
+  <h2 id="parent-add-child-title">내 자녀 추가</h2>
+  <p class="muted">부모 계정에서는 본인 자녀만 생성/연결됩니다.</p>
+  <form class="stack-form" action="/parent/children/create" method="post">
+    {% csrf_token %}
+    <div class="field-row two-col">
+      <div>
+        <label for="parent-child-username">자녀 아이디</label>
+        <input id="parent-child-username" name="username" minlength="3" required>
+      </div>
+      <div>
+        <label for="parent-child-password">비밀번호</label>
+        <input id="parent-child-password" name="password" type="password" minlength="4" required>
+      </div>
+    </div>
+    <div class="field-row two-col">
+      <div>
+        <label for="parent-child-grade">학년</label>
+        <input id="parent-child-grade" name="grade" placeholder="초4">
+      </div>
+      <div>
+        <label for="parent-child-interests">관심사 (쉼표 구분)</label>
+        <input id="parent-child-interests" name="interests" placeholder="축구, 과학">
+      </div>
+    </div>
+    <div class="field-row">
+      <label for="parent-child-guidance">가이드</label>
+      <textarea id="parent-child-guidance" name="guidance" rows="2" placeholder="숙제 먼저 하고 놀이하기"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">자녀 추가</button>
+  </form>
+</section>
+
+<section class="child-grid" aria-label="자녀 목록">
+  {% for child in children %}
+  <article class="panel child-card">
+    <header>
+      <h2>{{ child.username }}</h2>
+      <p class="muted">완료 {{ child.todo_done }} / 전체 {{ child.todo_total }}</p>
+    </header>
+
+    <section class="progress-block" aria-label="할 일 완료율">
+      <meter min="0" max="100" value="{{ child.completion_pct|floatformat:0 }}">{{ child.completion_pct|floatformat:1 }}%</meter>
+      <p class="progress-text">{{ child.completion_pct|floatformat:1 }}%</p>
+    </section>
+
+    <p class="muted">
+      최근 활동:
+      {% if child.last_chat_at %}
+      <time datetime="{{ child.last_chat_at|date:'c' }}">{{ child.last_chat_at|date:"Y-m-d H:i" }}</time>
+      {% else %}
+      없음
+      {% endif %}
+    </p>
+
+    <a href="/parent/child/{{ child.id }}" class="btn btn-secondary">상세 보기</a>
+  </article>
+  {% empty %}
+  <article class="panel empty-state">
+    <h2>연결된 자녀가 없습니다.</h2>
+    <p class="muted">위 폼에서 자녀 계정을 추가하면 바로 연결됩니다.</p>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

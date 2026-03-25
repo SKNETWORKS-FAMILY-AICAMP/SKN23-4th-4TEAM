@@ -1,0 +1,21 @@
+.git
+.gitignore
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.log
+
+# local artifacts
+feedback.md
+aticle/
+data/rag_sources/
+data/*.db
+data/*.sqlite3
+
+# dev-only
+tests/
+10_instructor/

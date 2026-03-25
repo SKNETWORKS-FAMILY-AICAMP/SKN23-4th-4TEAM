@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}자녀 채팅 | YouOnlyTalkOnce{% endblock %}
+{% block extra_scripts %}
+<script defer src="{% static 'core/js/child-chat.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head" aria-labelledby="child-chat-title">
+  <h1 id="child-chat-title">AI 채팅</h1>
+  <p class="muted">오늘 있었던 일을 편하게 이야기하고, 필요한 할 일 제안을 받아보세요.</p>
+  <div class="inline-row">
+    <button type="button" class="btn btn-secondary" id="child-todo-open-btn">
+      오늘 할 일 보기{% if pending_todo_count %} ({{ pending_todo_count }}){% endif %}
+    </button>
+  </div>
+</section>
+
+<section class="panel chat-panel" data-child-chat data-session-id="{{ session_id }}" data-child-id="{{ request.user.id }}">
+  <ul class="chat-log" id="chat-log" data-chat-log aria-live="polite" aria-label="대화 내용">
+    {% for message in chat_messages %}
+    <li class="chat-row chat-{{ message.role }}">
+      <p class="chat-meta">
+        <span class="chip chip-{{ message.role }}">{{ message.role }}</span>
+        <time datetime="{{ message.created_at|date:'c' }}">{{ message.created_at|date:"Y-m-d H:i" }}</time>
+      </p>
+      <p class="chat-content">{{ message.content }}</p>
+    </li>
+    {% empty %}
+    <li class="muted" data-chat-empty>첫 메시지를 보내 대화를 시작해보세요.</li>
+    {% endfor %}
+  </ul>
+
+  <section class="suggestion-block" aria-labelledby="suggested-todo-title">
+    <h2 id="suggested-todo-title">추천 할 일</h2>
+    <div id="suggested-todos" class="chip-list" aria-live="polite"></div>
+  </section>
+
+  <p id="chat-error" class="error-banner is-hidden" role="alert"></p>
+
+  <form id="chat-form" class="chat-input-form" novalidate>
+    <label for="chat-input">메시지</label>
+    <textarea id="chat-input" rows="3" maxlength="1200" placeholder="예: 오늘 학교에서 어떤 일이 있었는지 적어보세요." required></textarea>
+    <div class="inline-row">
+      <button id="chat-send-btn" type="submit" class="btn btn-primary" data-submit-label="전송">전송</button>
+      <button id="chat-retry-btn" type="button" class="btn btn-ghost is-hidden">재시도</button>
+      <span class="muted" id="chat-rate-limit-msg" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<div class="modal is-hidden" id="child-todo-modal" role="dialog" aria-modal="true" aria-labelledby="child-todo-title">
+  <div class="modal-backdrop" data-modal-close="child-todo"></div>
+  <div class="modal-content">
+    <header class="modal-head">
+      <h3 id="child-todo-title">내 할 일</h3>
+      <button type="button" class="btn btn-ghost" data-modal-close="child-todo" aria-label="닫기">닫기</button>
+    </header>
+    <ul class="todo-list" aria-label="자녀 할 일 목록">
+      {% for todo in todos %}
+      <li class="todo-item">
+        <div class="todo-main">
+          <p class="todo-title">{{ todo.title }}</p>
+          <p class="muted">
+            상태 {{ todo.status }}
+            {% if todo.due_date %} · 기한 {{ todo.due_date|date:"Y-m-d" }}{% endif %}
+          </p>
+        </div>
+      </li>
+      {% empty %}
+      <li class="muted">등록된 할 일이 없습니다.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
